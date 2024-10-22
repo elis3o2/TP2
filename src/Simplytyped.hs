@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-} -- //TODO: eliminar
 module Simplytyped
   ( conversion
   ,    -- conversion a terminos localmente sin nombre
@@ -23,23 +24,17 @@ buscar :: [String] -> String -> Int -> Int
 buscar [] s n = -1
 buscar (x:xs) s n = if x == s then n else buscar xs s (n+1)
 
-
-busqueda :: [String] -> LamTerm ->Term 
-busqueda l (LVar s)     = if w == -1 then (Free s)
-                          else (Bound w)
+busqueda :: [String] -> LamTerm -> Term 
+busqueda l (LVar s)     = if w == -1 then Free (Global s)
+                          else Bound w
                             where
-                              w = (buscar l s 0)
-busqueda l (Labs y T t) = Lam T (busqueda (y:l) t)  
-busqueda l (LApp t1 t2) = (busqueda l t1) :@: (busqueda l t2)
-busqueda l (LLet t1 t2) = Let (busqueda l (t1)) (busqueda l (t2)) 
-
-
-conversion' LamTerm -> Term
-conversion' t = busqueda [] t
+                              w = buscar l s 0
+busqueda l (LAbs y typ term) = Lam typ (busqueda (y:l) term)  
+busqueda l (LApp t1 t2) = busqueda l t1 :@: busqueda l t2
 
 -- conversion a términos localmente sin nombres
 conversion :: LamTerm -> Term
-conversion = conversion'
+conversion = busqueda []
 
 ----------------------------
 --- evaluador de términos
@@ -59,9 +54,25 @@ quote (VLam t f) = Lam t f
 
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
-eval e (LApp (Lamb T t1) t2) = VLam T (sub 0 t1 t2)
-eval e (LApp t1 t2) = eval e ((eval e t1) :@: t2)
-eval e (Let )
+eval e (Bound x) = VLam EmptyT (Bound x)
+eval e (Lam typ term) = VLam typ term
+eval e (Free s) = setVal e s
+  where 
+    setVal ((name, (v,t)):xs) s =
+      if name == s then v
+      else setVal xs s
+eval e (abs@(Lam typ1 term1):@:v@(Lam typ2 term2)) = -- E-APPABS
+  eval e (sub 0 v term1) 
+eval e (v@(Lam typ ter) :@: t2) = -- E-APP2
+  let t2' = eval e t2
+      t2t = quote t2' in
+    eval e (v :@: t2t)
+eval e (t1 :@: t2) = -- E-APP1
+  let t1' = eval e t1
+      t1t = quote t1'  in
+    eval e (t1t :@: t2) 
+
+--term = ((Lam (FunT EmptyT EmptyT) (Bound 0)):@:(Free (Global "fr")))
 ----------------------
 --- type checker
 -----------------------
