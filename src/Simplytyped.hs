@@ -51,10 +51,14 @@ sub _ _ (Bound j) | otherwise = Bound j
 sub _ _ (Free n   )           = Free n
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
+sub i t (Let t1 t2) = Let (sub i t t1) (sub (i + 1) t t2)
 
 -- convierte un valor en el término equivalente
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
+
+getType :: Value -> Type 
+getType (VLam typ term) = typ
 
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
@@ -75,15 +79,18 @@ eval e (t1 :@: t2) = -- E-APP1
   let t1' = eval e t1
       t1t = quote t1'  in
     eval e (t1t :@: t2) 
-eval e (Let (Free s) t2) = sub 0 s t2 -- E-LETV
+eval e (Let v@(Lam typ ter) t2) = -- E-LETV
+  eval e (sub 0 v t2) 
 eval e (Let t1 t2) = --  E-LET
-  let t1' = eval e t1 in
-    eval e (Let t1' t2)
+  let t1' = eval e t1
+      t1t = quote t1' in
+    eval e (Let t1t t2)
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
-eval e (Rec t1 t2 (Suc x)) = (t2 :@: (Rec t1 t2 x)) :@: x -- E-RSUC
+eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
 eval e (Rec t1 t2 t3) = -- E-R
-  let t3' = eval e t3 in
-    eval e (Rec t1 t2 t3') 
+  let t3' = eval e t3
+      t3t = quote t3' in
+    eval e (Rec t1 t2 t3t) 
 
 --term = ((Lam (FunT EmptyT EmptyT) (Bound 0)):@:(Free (Global "fr")))
 ----------------------
