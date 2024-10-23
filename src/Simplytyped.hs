@@ -125,8 +125,13 @@ notfunError t1 = err $ render (printType t1) ++ " no puede ser aplicado."
 notfoundError :: Name -> Either String Type
 notfoundError n = err $ show n ++ " no está definida."
 
+checkNat :: Type -> Either String Type
+checkNat NatT = ret NatT
+checkNat t = matchError NatT t
+
 -- infiere el tipo de un término a partir de un entorno local de variables y un entorno global
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
+infer' _ _ Zero = ret NatT -- T-Zero
 infer' c _ (Bound i) = ret (c !! i)
 infer' _ e (Free  n) = case lookup n e of
   Nothing     -> notfoundError n
@@ -138,3 +143,13 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t1 t2) = 
   infer' c e t1 >>= \tt1 -> infer' (tt1:c) e t2
+infer' c e (Suc t) = infer' c e t >>= \tt -> checkNat tt
+infer' c e (Rec t1 t2 t3) =
+  infer' c e t1 >>= \tt1 ->
+    infer' c e t2 >>= \tt2 ->
+      case tt2 of
+        (FunT (FunT tt1' NatT) tt1'') ->
+          if tt1' == tt1 && tt1'' == tt1 then
+            infer' c e t3 >>= \tt3 -> checkNat tt3
+          else matchError tt1 tt1' 
+        _ -> matchError (FunT (FunT tt1 NatT) tt1) tt2
