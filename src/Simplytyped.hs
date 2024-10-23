@@ -31,6 +31,10 @@ busqueda l (LVar s)     = if w == -1 then Free (Global s)
                               w = buscar l s 0
 busqueda l (LAbs y typ term) = Lam typ (busqueda (y:l) term)  
 busqueda l (LApp t1 t2) = busqueda l t1 :@: busqueda l t2
+busqueda l (LLet x t1 t2)  = Let (busqueda l t1) (busqueda (x:l) t2) --LET
+busqueda l LZero           = Zero
+busqueda l (LSuc term)     = Suc (busqueda l term) -- SUC
+busqueda l (LRec t1 t2 t3) = Rec (busqueda l t1) (busqueda l t2) (busqueda l t3) -- R  
 
 -- conversion a términos localmente sin nombres
 conversion :: LamTerm -> Term
@@ -71,6 +75,15 @@ eval e (t1 :@: t2) = -- E-APP1
   let t1' = eval e t1
       t1t = quote t1'  in
     eval e (t1t :@: t2) 
+eval e (Let (Free s) t2) = sub 0 s t2 -- E-LETV
+eval e (Let t1 t2) = --  E-LET
+  let t1' = eval e t1 in
+    eval e (Let t1' t2)
+eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
+eval e (Rec t1 t2 (Suc x)) = (t2 :@: (Rec t1 t2 x)) :@: x -- E-RSUC
+eval e (Rec t1 t2 t3) = -- E-R
+  let t3' = eval e t3 in
+    eval e (Rec t1 t2 t3') 
 
 --term = ((Lam (FunT EmptyT EmptyT) (Bound 0)):@:(Free (Global "fr")))
 ----------------------
@@ -119,5 +132,4 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
-
 
