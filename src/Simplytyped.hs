@@ -57,9 +57,6 @@ sub i t (Let t1 t2) = Let (sub i t t1) (sub (i + 1) t t2)
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
 
-getType :: Value -> Type 
-getType (VLam typ term) = typ
-
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
 eval e (Bound x) = VLam EmptyT (Bound x)
