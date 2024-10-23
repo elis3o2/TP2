@@ -62,7 +62,7 @@ eval :: NameEnv Value Type -> Term -> Value
 eval e (Bound x) = VLam EmptyT (Bound x)
 eval e (Lam typ term) = VLam typ term
 eval e (Free s) = setVal e s
-  where 
+  where
     setVal ((name, (v,t)):xs) s =
       if name == s then v
       else setVal xs s
@@ -133,7 +133,8 @@ infer' _ e (Free  n) = case lookup n e of
   Just (_, t) -> ret t
 infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
   case tt of
-    FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
+    FunT t1 t2 -> if tu == t1 then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
-
+infer' c e (Let t1 t2) = 
+  infer' c e t1 >>= \tt1 -> infer' (tt1:c) e t2
