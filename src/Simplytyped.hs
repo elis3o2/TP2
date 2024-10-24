@@ -35,6 +35,9 @@ busqueda l (LLet x t1 t2)  = Let (busqueda l t1) (busqueda (x:l) t2) --LET
 busqueda l LZero           = Zero
 busqueda l (LSuc term)     = Suc (busqueda l term) -- SUC
 busqueda l (LRec t1 t2 t3) = Rec (busqueda l t1) (busqueda l t2) (busqueda l t3) -- R  
+busqueda l LNil            = Nil
+busqueda l (LCons t1 t2)   = Cons (busqueda l t1) (busqueda l t2)
+ 
 
 -- conversion a términos localmente sin nombres
 conversion :: LamTerm -> Term
@@ -84,10 +87,21 @@ eval e (Let t1 t2) = --  E-LET
     eval e (Let t1t t2)
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
 eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
+eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
+eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
 eval e (Rec t1 t2 t3) = -- E-R
   let t3' = eval e t3
       t3t = quote t3' in
     eval e (Rec t1 t2 t3t) 
+eval e (Cons t1 t2) =  -- E-CONS1
+  let t1' = eval e t1 
+      t1t = quote t1' in
+    eval e (Cons t1t t2)
+eval e (Cons t1 t2) =  -- E-CONS2
+  let t2' = eval e t2 
+      t2t = quote t2' in
+    eval e (Cons t1 t2t)
+
 
 --term = ((Lam (FunT EmptyT EmptyT) (Bound 0)):@:(Free (Global "fr")))
 ----------------------
