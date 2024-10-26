@@ -38,6 +38,40 @@ pp ii vs (Lam t c) =
     <> text ". "
     <> pp (ii + 1) vs c
 
+pp ii vs (Let t1 t2) = 
+  sep [ text "let" 
+          <+> text (vs !! ii) 
+          <+> text "=" 
+          <+> pp ii vs t1
+          , text "in" 
+          <+> pp (ii + 1) vs t2
+      ]
+
+pp _  _  Zero          = text "0"
+pp ii vs (Suc t       ) = text "Suc" 
+                            <+> pp ii vs t
+pp ii vs (Rec t1 t2 t3) = 
+  sep [ text "R" 
+           <+> pp ii vs t1
+          ,<+> pp ii vs t2
+          ,<+> pp ii vs t3
+      ]
+
+pp _  _  Nil          = text "[]"
+pp ii vs (Cons t1 t2) = 
+  text "[" 
+    <> ppList ii vs (Cons t1 t2) 
+    <> text "]"
+
+
+-- Función auxiliar para imprimir todos los elementos de la lista
+ppList :: Int -> [String] -> Term -> Doc
+ppList ii vs Nil          = empty
+ppList ii vs (Cons t1 Nil) = pp ii vs t1
+ppList ii vs (Cons t1 t2 ) = pp ii vs t1 <> text "," <+> ppList ii vs t2
+
+
+
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
