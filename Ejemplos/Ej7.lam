@@ -1,0 +1,1 @@
+def sumPos = \x:ListT. RL (Nil) (\y:NatT. \z:ListT. \f:ListT->NatT->ListT. \i:NatT. CONS (x+1) f (i+1) 1) 
