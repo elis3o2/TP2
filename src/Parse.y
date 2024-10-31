@@ -148,7 +148,8 @@ lexer cont s = case s of
                     ('-':('>':cs)) -> cont TArrow cs
                     (')':cs) -> cont TClose cs
                     (':':cs) -> cont TColon cs
-                    ('=':cs) -> cont TEquals cs                    
+                    ('=':cs) -> cont TEquals cs                 
+                    ('0':cs) -> cont TZero cs
                     unknown -> \line -> Failed $ 
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
@@ -162,8 +163,8 @@ lexer cont s = case s of
                               ("R",rest)        -> cont TRec rest                              
                               ("nil",rest)      -> cont TNil rest
                               ("cons",rest)     -> cont TCons rest
-                              ("RL",rest)       -> cont TRl rest
-                              (var,rest)    -> cont (TVar var) rest
+                              ("RL",rest)       -> cont TRl rest                              
+                              (var,rest)        -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
                               ('{':('-':cs)) -> consumirBK (anidado+1) cl cont cs	
