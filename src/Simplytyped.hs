@@ -115,13 +115,11 @@ eval e (Rec t1 t2 t3) = -- E-R
       t3t = quote t3' in
     eval e (Rec t1 t2 t3t) 
 
+eval e Nil = VList VNil
 eval e (Cons t1 t2) =  -- E-CONS1 y E-CONS2
-  let t1' = eval e t1
-      t2' = eval e t2
-      t1t = quote t1' 
-      t2t = quote t2' in
-    eval e (Cons t1t t2t)
-    
+  let (VNum t1') = eval e t1
+      (VList t2') = eval e t2 in
+    VList (VCons t1' t2')
 ----------------------
 --- type checker
 -----------------------
