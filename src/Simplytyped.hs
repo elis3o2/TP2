@@ -157,9 +157,12 @@ checkNat :: Type -> Either String Type
 checkNat NatT = ret NatT
 checkNat t = matchError NatT t
 
+checkList :: Type -> Either String Type
+checkList ListT = ret ListT
+checkList t = matchError ListT t
+
 -- infiere el tipo de un término a partir de un entorno local de variables y un entorno global
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
-infer' _ _ Zero = ret NatT -- T-Zero
 infer' c _ (Bound i) = ret (c !! i)
 infer' _ e (Free  n) = case lookup n e of
   Nothing     -> notfoundError n
@@ -169,22 +172,26 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     FunT t1 t2 -> if tu == t1 then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
-infer' c e (Let t1 t2) = 
-  infer' c e t1 >>= \tt1 -> infer' (tt1:c) e t2
-infer' c e (Suc t) = infer' c e t >>= \tt -> checkNat tt
+
+infer' c e (Let t1 t2) = infer' c e t1 >>= \tt1 -> infer' (tt1:c) e t2
+infer' c e Zero       = ret NatT
+infer' c e (Suc t)    = infer' c e t >>= \tt -> checkNat tt
+infer' c e Nil         = ret ListT
+infer' c e (Cons n vl) = infer' c e n >>= \tn -> infer' c e vl >>= \tvl ->
+    case tn of
+        NatT -> case tvl of
+                ListT -> ret ListT
+                _     -> matchError ListT tvl
+        _    -> matchError NatT tn
+
 infer' c e (Rec t1 t2 t3) =
   infer' c e t1 >>= \tt1 ->
     infer' c e t2 >>= \tt2 ->
       case tt2 of
-        (FunT (FunT tt1' NatT) tt1'') ->
-          if tt1' == tt1 && tt1'' == tt1 then
-            infer' c e t3 >>= \tt3 -> checkNat tt3
-          else matchError tt1 tt1' 
-        _ -> matchError (FunT (FunT tt1 NatT) tt1) tt2
-infer' c e Nil        = ret ListT
-infer' c e (Cons n vl) = infer' c e n >>= \tt -> infer' c e vl >>= \tu ->
-    case tt of
-        NatT -> case tu of
-                ListT -> ret ListT
-                _     -> matchError ListT tt
-        _    -> matchError NatT tt
+        (FunT (FunT tt1' NatT) tt1'') -> if tt1' == tt1 && tt1'' == tt1 then
+                                         infer' c e t3 >>= \tt3 -> checkList tt3
+                                         else matchError tt1 tt1' 
+        (FunT (FunT NatT ListT) (FunT tt1' tt1'')) -> if tt1' == tt1 && tt1'' == tt1 then
+                                                      infer' c e t3 >>= \tt3 -> checkNat tt3
+                                                      else matchError tt1 tt1' 
+        _          -> notfunError tt2
