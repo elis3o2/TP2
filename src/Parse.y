@@ -25,14 +25,24 @@ import Data.Char
     '('     { TOpen }
     ')'     { TClose }
     '->'    { TArrow }
+    '0'     { TZero }
+    'nil'   { TNil }
+    'cons'  { TCons }
+    'RL'    { TRl }    
     VAR     { TVar $$ }
     TYPEE   { TTypeE }
+    TYPEN   { TTypeN }
+    TYPELN  { TTypeLN }
     DEF     { TDef }
     
 
 %left '=' 
 %right '->'
-%right '\\' '.' 
+%right 'let' '\\' '.' 
+%right 'R'
+%left 'RL'
+%left 'cons'
+%rigth 'suc'
 
 %%
 
@@ -43,6 +53,10 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | 'let' VAR '=' Exp 'in' Exp   { LLet $2 $4 $6 }
+        | 'suc' Exp                    { LSuc $2 }
+        | 'R' Atom Atom Exp            { LRec $2 $3 $4}
+        | 'RL' Atom Atom Exp           { LRec $2 $3 $4 }
+        | 'cons' Atom Exp              { LCons $2 $3 }
         | NAbs                         { $1 }
         
 NAbs    :: { LamTerm }
@@ -50,10 +64,14 @@ NAbs    :: { LamTerm }
         | Atom                         { $1 }
 
 Atom    :: { LamTerm }
-        : VAR                          { LVar $1 }  
+        : VAR                          { LVar $1 }
+        | '0'                          { LZero }
+        | 'nil'                        { LNil }
         | '(' Exp ')'                  { $2 }
 
 Type    : TYPEE                        { EmptyT }
+        | TYPEN                        { NatT }
+        | TTypeLN                      { ListT }
         | Type '->' Type               { FunT $1 $3 }
         | '(' Type ')'                 { $2 }
 
@@ -119,12 +137,20 @@ lexer cont s = case s of
                     ('-':('>':cs)) -> cont TArrow cs
                     (')':cs) -> cont TClose cs
                     (':':cs) -> cont TColon cs
-                    ('=':cs) -> cont TEquals cs
+                    ('=':cs) -> cont TEquals cs                    
                     unknown -> \line -> Failed $ 
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
-                              ("E",rest)    -> cont TTypeE rest
-                              ("def",rest)  -> cont TDef rest
+                              ("E",rest)        -> cont TTypeE rest
+                              ("Nat",rest)      -> cont TTypeN rest
+                              ("List Nat":rest) -> cont TTypeLN rest
+                              ("def",rest)      -> cont TDef rest
+                              ("let",rest)      -> cont TLet rest
+                              ("suc",rest)      -> cont TSuc rest
+                              ("R":rest)        -> cont TRec rest                              
+                              ("nil":rest)      -> cont TNil rest
+                              ("cons":rest)     -> cont TCons rest
+                              ("RL":rest)       -> cont TRl rest
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
