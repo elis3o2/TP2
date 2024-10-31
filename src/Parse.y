@@ -43,7 +43,7 @@ import Data.Char
 %right 'R'
 %left 'RL'
 %left 'cons'
---%rigth 'suc'
+%right 'suc'
 
 %%
 
