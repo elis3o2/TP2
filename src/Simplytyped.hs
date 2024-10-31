@@ -65,9 +65,14 @@ sub i t (Cons n vl) = Cons (sub i t n) (sub i t vl)
 quote :: Value -> Term
 quote (VLam t f    ) = Lam t f
 quote (VNum NZero  ) = Zero
-quote (VNum NSuc Vn) = Suc (quote n)
-quote (VList VNil  ) = Nil
-quote (VList VCons Vn Vvl) = Cons (quote Vn) (quote Vvl)
+--quote (VNum (NSuc n)) = Suc (quote n)
+--quote (VList VNil  )  = Nil
+--quote (VList (VCons n vl)) = Cons (quote n) (quote vl)
+--
+---- convierte un NumVal a un termino equivalente
+--quote2 :: NumVal -> Term
+--quote2 (NZero)  = Zero
+--quote2 (NSuc x) = Suc (quote2 x)
 
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
@@ -76,13 +81,13 @@ eval e (Lam typ term) = VLam typ term
 eval e (Free s) = setVal e s
   where
     setVal ((name, (v,t)):xs) s =
-      if nam2e == s then v
+      if name == s then v
       else setVal xs s
 
 eval e (abs@(Lam typ1 term1):@:t2) = 
   let t2' = eval e t2       -- E-APP1
       t2t = quote t2'
-  in eval e (sub 0 v term1)     -- APPABS
+  in eval e (sub 0 t2t term1)     -- APPABS
 
 eval e (t1 :@: t2) = -- E-APP1
   let t1' = eval e t1
@@ -96,10 +101,9 @@ eval e (Let t1 t2) =
 
 eval e Zero = VNum NZero
 eval e (Suc n) = 
-  let n' = eval e n
-      nt = quote n'
-  in VNum NSuc (eval e nt)
-
+  let (VNum n') = eval e n
+  in VNum (NSuc n')
+  
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
 eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
 
@@ -114,7 +118,7 @@ eval e (Rec t1 t2 t3) = -- E-R
 eval e (Cons t1 t2) =  -- E-CONS1 y E-CONS2
   let t1' = eval e t1
       t2' = eval e t2
-      t1t = quote t1' in
+      t1t = quote t1' 
       t2t = quote t2' in
     eval e (Cons t1t t2t)
     

@@ -39,13 +39,12 @@ pp ii vs (Lam t c) =
     <> pp (ii + 1) vs c
 
 pp ii vs (Let t1 t2) = 
-  sep [ text "let" 
-          <+> text (vs !! ii) 
-          <+> text "=" 
-          <+> pp ii vs t1
-          , text "in" 
-          pp (ii + 1) vs t2
-      ]
+  text "let" 
+    <> text (vs !! ii) 
+    <> text "=" 
+    <> pp ii vs t1
+    <> text "in" 
+    <> pp (ii + 1) vs t2
 
 pp _  _  Zero          = text "0"
 pp ii vs (Suc t       ) = text "Suc" 
@@ -102,7 +101,7 @@ fv (Lam _   u       ) = fv u
 fv (Let t1 t2) = fv t1 ++ fv t2
 fv Zero = []
 fv (Suc t) = fv t
-fv (Rec t1 t2 t3) fv t1 ++ fv t2 ++ fv t3
+fv (Rec t1 t2 t3) = fv t1 ++ fv t2 ++ fv t3
 fv Nil = []
 fv (Cons t1 t2) = fv t1 ++ fv t2
 
