@@ -39,11 +39,11 @@ pp ii vs (Lam t c) =
     <> pp (ii + 1) vs c
 
 pp ii vs (Let t1 t2) = 
-  text "let" 
+  text "let " 
     <> text (vs !! ii) 
-    <> text "=" 
+    <> text " = " 
     <> pp ii vs t1
-    <> text "in" 
+    <> text " in " 
     <> pp (ii + 1) vs t2
 
 pp _  _  Zero          = text "0"
