@@ -18,6 +18,7 @@ import Data.Char
     '='     { TEquals }
     ':'     { TColon }
     'let'   { TLet }
+    'in'    { TIn }
     '\\'    { TAbs }
     'R'     { TRec }
     'suc'   { TSuc }
@@ -38,7 +39,7 @@ import Data.Char
 
 %left '=' 
 %right '->'
-%right 'let' '\\' '.' 
+%right 'let' 'in' '\\' '.' 
 %right 'R'
 %left 'RL'
 %left 'cons'
@@ -146,6 +147,7 @@ lexer cont s = case s of
                               ("List Nat":rest) -> cont TTypeLN rest
                               ("def",rest)      -> cont TDef rest
                               ("let",rest)      -> cont TLet rest
+                              ("in", rest)      -> cont TIn rest
                               ("suc",rest)      -> cont TSuc rest
                               ("R":rest)        -> cont TRec rest                              
                               ("nil":rest)      -> cont TNil rest
