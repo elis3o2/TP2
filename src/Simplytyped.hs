@@ -55,10 +55,19 @@ sub _ _ (Free n   )           = Free n
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
 sub i t (Let t1 t2) = Let (sub i t t1) (sub (i + 1) t t2)
+sub i t Zero        = Zero
+sub i t (Suc t')    = sub i t t'
+sub i t (Rec t1 t2 t3) = Rec (sub i t t1) (sub i t t2) (sub i t t3)
+sub i t Nil         = Nil
+sub i t (Cons n vl) = Cons (sub i t n) (sub i t vl)
 
 -- convierte un valor en el término equivalente
 quote :: Value -> Term
-quote (VLam t f) = Lam t f
+quote (VLam t f    ) = Lam t f
+quote (VNum NZero  ) = Zero
+quote (VNum NSuc Vn) = Suc (quote n)
+quote (VList VNil  ) = Nil
+quote (VList VCons Vn Vvl) = Cons (quote Vn) (quote Vvl)
 
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
@@ -67,34 +76,42 @@ eval e (Lam typ term) = VLam typ term
 eval e (Free s) = setVal e s
   where
     setVal ((name, (v,t)):xs) s =
-      if name == s then v
+      if nam2e == s then v
       else setVal xs s
-eval e (abs@(Lam typ1 term1):@:v@(Lam typ2 term2)) = -- E-APPABS
-  eval e (sub 0 v term1) 
-eval e (v@(Lam typ ter) :@: t2) = -- E-APP2
-  let t2' = eval e t2
-      t2t = quote t2' in
-    eval e (v :@: t2t)
+
+eval e (abs@(Lam typ1 term1):@:t2) = 
+  let t2' = eval e t2       -- E-APP1
+      t2t = quote t2'
+  in eval e (sub 0 v term1)     -- APPABS
+
 eval e (t1 :@: t2) = -- E-APP1
   let t1' = eval e t1
       t1t = quote t1'  in
-    eval e (t1t :@: t2) 
-eval e (Let v@(Lam typ ter) t2) = -- E-LETV
-  eval e (sub 0 v t2) 
-eval e (Let t1 t2) = --  E-LET
-  let t1' = eval e t1
-      t1t = quote t1' in
-    eval e (Let t1t t2)
+    eval e (t1t :@: t2)
+
+eval e (Let t1 t2) = 
+  let t1' = eval e t1    -- E-LET 
+      t1t = quote t1' in -- E-LETV
+    eval e (sub 0 t1t t2)
+
+eval e Zero = VNum NZero
+eval e (Suc n) = 
+  let n' = eval e n
+      nt = quote n'
+  in VNum NSuc (eval e nt)
+
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
 eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
+
 eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
 eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
 eval e (Rec t1 t2 t3) = -- E-R
   let t3' = eval e t3
       t3t = quote t3' in
     eval e (Rec t1 t2 t3t) 
-eval e (Cons t1 t2) =  -- E-CONS1
-  let t1' = eval e t1 
+eval e (Cons t1 t2) =  -- E-CONS1 y E-CONS2
+  let t1' = eval e t1
+      t2' = eval e t2
       t1t = quote t1' in
     eval e (Cons t1t t2)
 eval e (Cons t1 t2) =  -- E-CONS2
@@ -167,3 +184,10 @@ infer' c e (Rec t1 t2 t3) =
             infer' c e t3 >>= \tt3 -> checkNat tt3
           else matchError tt1 tt1' 
         _ -> matchError (FunT (FunT tt1 NatT) tt1) tt2
+infer' c e Nil        = ret ListT
+infer' c e (Cons n vl) = infer' c e n >>= \tt -> infer' c e vl >>= \tu ->
+    case tt of
+        NatT -> case tu of
+                ListT -> ret ListT
+                _     -> matchError ListT tt
+        _    -> matchError NatT tt
