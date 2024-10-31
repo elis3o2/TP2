@@ -105,22 +105,19 @@ eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
 
 eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
 eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
+
 eval e (Rec t1 t2 t3) = -- E-R
   let t3' = eval e t3
       t3t = quote t3' in
     eval e (Rec t1 t2 t3t) 
+
 eval e (Cons t1 t2) =  -- E-CONS1 y E-CONS2
   let t1' = eval e t1
       t2' = eval e t2
       t1t = quote t1' in
-    eval e (Cons t1t t2)
-eval e (Cons t1 t2) =  -- E-CONS2
-  let t2' = eval e t2 
       t2t = quote t2' in
-    eval e (Cons t1 t2t)
-
-
---term = ((Lam (FunT EmptyT EmptyT) (Bound 0)):@:(Free (Global "fr")))
+    eval e (Cons t1t t2t)
+    
 ----------------------
 --- type checker
 -----------------------
