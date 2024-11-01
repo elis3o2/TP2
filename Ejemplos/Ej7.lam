@@ -1,4 +1,4 @@
 def suma = \x:Nat. \y:Nat. (R y (\f:Nat. \n:Nat. (suc n)) x)
 
-def sumPosaux = \x:List. \y:Nat. (RL (nil) (\n:Nat. \v:List. \f:List. (cons (suma n y) (f v (suc y)))) x)
+def sumPosaux = \x:List Nat. \y:Nat. (RL (nil) (\n:Nat. \v:List Nat. \f:List Nat. (cons (suma n y) (f v (suc y)))) x)
 
