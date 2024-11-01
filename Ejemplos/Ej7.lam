@@ -1,4 +1,4 @@
-def suma = \x:Nat. \y:Nat. (R y (\f:Nat. \n:Nat. (suc n)) x)
+def suma = \x:Nat. \y:Nat. (R y (\f:Nat. \n:Nat. (suc f)) x)
 
 def menosuno = \x:Nat. R 0 (\r:Nat.\n:Nat. n) x 
 
