@@ -64,8 +64,7 @@ sub i t (Cons n vl) = Cons (sub i t n) (sub i t vl)
 -- convierte un valor en el término equivalente
 quote :: Value -> Term
 quote (VLam t f    ) = Lam t f
-quote (VNum NZero  ) = Zero
-quote (VNum NZero) = Zero
+quote (VNum NZero ) = Zero
 quote (VNum (NSuc n)) = Suc (quote (VNum n))
 quote (VList VNil) = Nil
 quote (VList (VCons n vl)) = Cons (quote (VNum n)) (quote (VList vl))
@@ -101,7 +100,7 @@ eval e (Suc n) =
   in VNum (NSuc n')
   
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
-eval e (Rec t1 t2 (Suc x)) = eval e (t2 :@: (Rec t1 t2 x:@:x)) -- E-RSUC
+eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
 
 eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
 eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
@@ -183,13 +182,11 @@ infer' c e (Cons n vl) = infer' c e n >>= \tn -> infer' c e vl >>= \tvl ->
         _    -> matchError NatT tn
 
 infer' c e (Rec t1 t2 t3) =
-  infer' c e t1 >>= \tt1 ->
-    infer' c e t2 >>= \tt2 ->
-      case tt2 of
-        (FunT tt1'(FunT NatT tt1'')) -> if tt1' == tt1 && tt1'' == tt1 then
-                                         infer' c e t3 >>= \tt3 -> checkNat tt3
-                                         else matchError tt1 tt1' 
-        (FunT  NatT (FunT ListT (FunT tt1' tt1''))) -> if tt1' == tt1 && tt1'' == tt1 then
-                                                      infer' c e t3 >>= \tt3 -> checkList tt3
-                                                      else matchError tt1 tt1' 
-        _          -> notfunError tt2
+  infer' c e t1 >>= \tt1 -> infer' c e t2 >>= \tt2 -> infer' c e t3 >>= \tt3 ->
+        case (tt3, tt2) of
+          (NatT, (FunT tt1'(FunT NatT tt1''))) ->  if tt1' == tt1 && tt1'' == tt1 then ret tt1
+                                                   else matchError tt1 tt1' 
+
+          (ListT, (FunT  NatT (FunT ListT (FunT tt1' tt1'')))) -> if tt1' == tt1 && tt1'' == tt1 then ret tt1
+                                                                  else matchError tt1 tt1' 
+          _          -> notfunError tt2

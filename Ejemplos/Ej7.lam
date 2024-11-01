@@ -1,4 +1,9 @@
 def suma = \x:Nat. \y:Nat. (R y (\f:Nat. \n:Nat. (suc n)) x)
 
-def sumPosaux = \x:List Nat. \y:Nat. (RL (nil) (\n:Nat. \v:List Nat. \f:List Nat. (cons (suma n y) (f v (suc y)))) x)
+def menosuno = \x:Nat. R 0 (\r:Nat.\n:Nat. n) x 
 
+def resta = \n:Nat.\m:Nat. (R n (\r:Nat.\n:Nat. (menosuno r)) m)
+
+def lenght = \l:List Nat. (RL 0 (\n:Nat. \vl:List Nat. \r:Nat. (suc r)) l)
+
+def sumPos = \l:List Nat. (RL nil (\n:Nat. \vl:List Nat. \r:List Nat. cons (suma n (resta (lenght l) (lenght vl))) r) l) 
