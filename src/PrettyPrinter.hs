@@ -47,8 +47,7 @@ pp ii vs (Let t1 t2) =
     <> pp (ii + 1) vs t2
 
 pp _  _  Zero          = text "0"
-pp ii vs (Suc t       ) = text "Suc" 
-                            <+> pp ii vs t
+pp ii vs (Suc t       ) = text (show (ppNum ii vs (Suc t)))
 pp ii vs (Rec t1 t2 t3) = 
   sep [ text "R" 
            <+> pp ii vs t1
@@ -62,6 +61,9 @@ pp ii vs (Cons t1 t2) =
     <> ppList ii vs (Cons t1 t2) 
     <> text "]"
 
+ppNum :: Int -> [String] -> Term -> Int
+ppNum ii vs Zero    = 0
+ppNum ii vs (Suc x) = 1 + (ppNum ii vs x)
 
 -- Función auxiliar para imprimir todos los elementos de la lista
 ppList :: Int -> [String] -> Term -> Doc
