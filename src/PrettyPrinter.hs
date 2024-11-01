@@ -47,7 +47,7 @@ pp ii vs (Let t1 t2) =
     <> pp (ii + 1) vs t2
 
 pp _  _  Zero          = text "0"
-pp ii vs (Suc t       ) = text (show (ppNum ii vs (Suc t)))
+pp ii vs (Suc t       ) = text "(suc" <+> pp ii vs t <> text ")"
 pp ii vs (Rec t1 t2 t3) = 
   sep [ text "R" 
            <+> pp ii vs t1
@@ -55,24 +55,9 @@ pp ii vs (Rec t1 t2 t3) =
           , pp ii vs t3
       ]
 
-pp _  _  Nil          = text "[]"
+pp _  _  Nil          = text "nil"
 pp ii vs (Cons t1 t2) = 
-  text "[" 
-    <> ppList ii vs (Cons t1 t2) 
-    <> text "]"
-
-ppNum :: Int -> [String] -> Term -> Int
-ppNum ii vs Zero    = 0
-ppNum ii vs (Suc x) = 1 + (ppNum ii vs x)
-
--- Función auxiliar para imprimir todos los elementos de la lista
-ppList :: Int -> [String] -> Term -> Doc
-ppList ii vs Nil          = empty
-ppList ii vs (Cons t1 Nil) = pp ii vs t1
-ppList ii vs (Cons t1 t2 ) = pp ii vs t1 <> text "," <+> ppList ii vs t2
-
-
-
+  text "(cons" <+> pp ii vs t1 <+> pp ii vs t2 <> text ")" 
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
