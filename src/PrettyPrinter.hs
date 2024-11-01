@@ -86,7 +86,7 @@ printType EmptyT = text "E"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
 printType NatT = text "Nat"
-printType ListT = text "List"
+printType ListT = text "List Nat"
 
 
 isFun :: Type -> Bool
