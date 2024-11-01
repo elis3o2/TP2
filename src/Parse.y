@@ -155,7 +155,7 @@ lexer cont s = case s of
                     where lexVar cs = case span isAlpha cs of
                               ("E",rest)        -> cont TTypeE rest
                               ("Nat",rest)      -> cont TTypeN rest
-                              ("List Nat",rest) -> cont TTypeLN rest
+                              ("List",rest)     -> cont TTypeLN rest
                               ("def",rest)      -> cont TDef rest
                               ("let",rest)      -> cont TLet rest
                               ("in", rest)      -> cont TIn rest

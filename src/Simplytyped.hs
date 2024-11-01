@@ -65,14 +65,10 @@ sub i t (Cons n vl) = Cons (sub i t n) (sub i t vl)
 quote :: Value -> Term
 quote (VLam t f    ) = Lam t f
 quote (VNum NZero  ) = Zero
---quote (VNum (NSuc n)) = Suc (quote n)
---quote (VList VNil  )  = Nil
---quote (VList (VCons n vl)) = Cons (quote n) (quote vl)
---
----- convierte un NumVal a un termino equivalente
---quote2 :: NumVal -> Term
---quote2 (NZero)  = Zero
---quote2 (NSuc x) = Suc (quote2 x)
+quote (VNum NZero) = Zero
+quote (VNum (NSuc n)) = Suc (quote (VNum n))
+quote (VList VNil) = Nil
+quote (VList (VCons n vl)) = Cons (quote (VNum n)) (quote (VList vl))
 
 -- evalúa un término en un entorno dado
 eval :: NameEnv Value Type -> Term -> Value
@@ -101,11 +97,11 @@ eval e (Let t1 t2) =
 
 eval e Zero = VNum NZero
 eval e (Suc n) = 
-  let (VNum n') = eval e n
+  let VNum n' = eval e n
   in VNum (NSuc n')
   
 eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
-eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
+eval e (Rec t1 t2 (Suc x)) = eval e (t2 :@: (Rec t1 t2 x:@:x)) -- E-RSUC
 
 eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
 eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
@@ -190,10 +186,10 @@ infer' c e (Rec t1 t2 t3) =
   infer' c e t1 >>= \tt1 ->
     infer' c e t2 >>= \tt2 ->
       case tt2 of
-        (FunT (FunT tt1' NatT) tt1'') -> if tt1' == tt1 && tt1'' == tt1 then
-                                         infer' c e t3 >>= \tt3 -> checkList tt3
+        (FunT tt1'(FunT NatT tt1'')) -> if tt1' == tt1 && tt1'' == tt1 then
+                                         infer' c e t3 >>= \tt3 -> checkNat tt3
                                          else matchError tt1 tt1' 
-        (FunT (FunT NatT ListT) (FunT tt1' tt1'')) -> if tt1' == tt1 && tt1'' == tt1 then
-                                                      infer' c e t3 >>= \tt3 -> checkNat tt3
+        (FunT  NatT (FunT ListT (FunT tt1' tt1''))) -> if tt1' == tt1 && tt1'' == tt1 then
+                                                      infer' c e t3 >>= \tt3 -> checkList tt3
                                                       else matchError tt1 tt1' 
         _          -> notfunError tt2
