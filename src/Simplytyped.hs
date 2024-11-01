@@ -56,7 +56,7 @@ sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
 sub i t (Let t1 t2) = Let (sub i t t1) (sub (i + 1) t t2)
 sub i t Zero        = Zero
-sub i t (Suc t')    = sub i t t'
+sub i t (Suc t')    = (Suc (sub i t t'))
 sub i t (Rec t1 t2 t3) = Rec (sub i t t1) (sub i t t2) (sub i t t3)
 sub i t Nil         = Nil
 sub i t (Cons n vl) = Cons (sub i t n) (sub i t vl)
@@ -80,7 +80,7 @@ eval e (Free s) = setVal e s
       else setVal xs s
 
 eval e (abs@(Lam typ1 term1):@:t2) = 
-  let t2' = eval e t2       -- E-APP1
+  let t2' = eval e t2       -- E-APP2
       t2t = quote t2'
   in eval e (sub 0 t2t term1)     -- APPABS
 
@@ -103,7 +103,7 @@ eval e (Rec t1 t2 Zero) = eval e t1 -- E-RZERO
 eval e (Rec t1 t2 (Suc x)) = eval e ((t2 :@: Rec t1 t2 x):@:x) -- E-RSUC
 
 eval e (Rec t1 t2 Nil) = eval e t1  --ERNIL
-eval e (Rec t1 t2 (Cons n lv)) = eval e ((t2 :@: (n :@: lv)) :@: (Rec t1 t2 lv)) -- ERCONS 
+eval e (Rec t1 t2 (Cons n lv)) = eval e (((t2 :@: n ):@: lv) :@: (Rec t1 t2 lv))-- ERCONS 
 
 eval e (Rec t1 t2 t3) = -- E-R
   let t3' = eval e t3
